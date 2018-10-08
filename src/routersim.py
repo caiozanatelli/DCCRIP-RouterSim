@@ -1,19 +1,21 @@
 #!/usr/bin/python3
 import argparse
-import router
+import sys
+from router import Router
 
 #Try for using in the interpreter
 import cmd
 
 def parse_args():
-	parser = argparse.ArgumentParser()
-	parser.add_argument("--addr", help="Router address")
+	parser = argparse.ArgumentParser(description='A router simulator that implements a \
+			distance-vector routing protocol with network balance and routing measures')
+	parser.add_argument("--addr", help="Router address", type=str, required=True)
 	parser.add_argument("--update-period", help="Router update sending time", type=int)
 	parser.add_argument("--startup-command", help="Command input file")
 	args = parser.parse_args()
 	return args
 
 if __name__ == "__main__":
-	args = Router.parse_args()
+	args = parse_args()
 	router = Router(args.addr, args.update_period)
 	router.run()
