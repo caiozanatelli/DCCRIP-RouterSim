@@ -6,7 +6,7 @@ from threading import Lock, Timer
 from collections import defaultdict
 
 DEFAULT_PORT   = 55151
-DEFAULT_PERIOD = 30
+DEFAULT_PERIOD = 15
 
 class Router:
 
@@ -25,6 +25,9 @@ class Router:
         # Setting the locks to critical sessions
         self.__routes_lock = Lock()
         self.__links_lock  = Lock()
+        # Setting the timer for updating routes information
+        self.__timer = Timer(self.__period, self.__send_update)
+        self.__timer.start()
 
     def run(self):
         while True:
@@ -71,6 +74,12 @@ class Router:
         del self.__links[addr]
         self.__links_lock.release()
 
+    def send_message(self, data):
+        pass
+
+    def __send_update(self):
+        pass
+
     def __handle_command(self, cmd_input):
         # TODO: perform all the commands in this function
         cmd = cmd_input.split(' ')
@@ -102,6 +111,12 @@ class Router:
             except Exception as e:
                 return False
         return True
+
+    def __reset_timer(self):
+        timer = Timer(self.__period, self.__send_update)
+        self.__timer.cancel()
+        self.__timer = timer
+        self.__timer.start()
 
     def __logexit(self, msg):
         print(msg)
