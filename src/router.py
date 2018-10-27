@@ -62,7 +62,6 @@ class Router:
         for key, mask in self.__routes.items():
             try:
                 del self.__routes[key][addr]
-                pass
             except:
                 pass
         self.__routes_lock.release()
