@@ -3,6 +3,7 @@ import socket
 import sys
 import re
 from threading import Lock, Timer
+from collections import defaultdict
 
 DEFAULT_PORT   = 55151
 DEFAULT_PERIOD = 30
@@ -15,7 +16,7 @@ class Router:
         self.__port   = DEFAULT_PORT
         self.__sock   = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.__sock.bind((self.__addr, self.__port))
-        self.__routes = dict()
+        self.__routes = defaultdict()
         self.__links  = dict()
         # Setting the selector for input (stdin and udp)
         self.__selector = selectors.DefaultSelector()
@@ -27,21 +28,23 @@ class Router:
 
     def run(self):
         while True:
-            #cmd = raw_input()
             evts = self.__selector.select()
             for key, mask in evts:
                 callback_funct = key.data
                 if key.fileobj == sys.stdin:
                     cmd = input()
                     callback_funct(cmd)
+
+                    print(self.__links)
+                    print(self.__routes)
                 elif key.fileobj == self.__sock:
                     print('Message handler not implemented yet. Sorry.')
 
-            #ip, weight = self.__parse_command(cmd)
-            #if ip is None and weight is None:
-            #    pass
-
     def add_link(self, addr, weight):
+        # Check whether we have a valid addr
+        if not self.__check_addr(addr):
+            self.__logexit('Error. Invalid IP.')
+
         if addr == self.__addr:
             print('Error on adding link: router trying to make a link to itself.')
             sys.exit(1)
@@ -50,11 +53,15 @@ class Router:
         self.__links_lock.release()
 
     def remove_link(self, addr):
+        # Check whether we have a valid addr
+        if not self.__check_addr(addr):
+            self.__logexit('Error. Invalid IP.')
+
         # First we safely remove the addr from the routing table
         self.__routes_lock.acquire()
-        for key, mask in self.__routes:
+        for key, mask in self.__routes.items():
             try:
-                #TODO
+                del self.__routes[key][addr]
                 pass
             except:
                 pass
@@ -69,31 +76,23 @@ class Router:
         # TODO: perform all the commands in this function
         cmd = cmd_input.split(' ')
         length =  len(cmd)
-        ip     = None
-        weight = None
 
         if length == 3 and cmd[0] == 'add':
             try:
-                ip = cmd[1]
-                weight = int(cmd[2])
-                if not self.__check_ip(ip):
-                    print('Invalid IP. Try again.')
+                self.add_link(cmd[1], int(cmd[2]))
             except Exception as e:
                 print(e)
                 sys.exit(1)
         elif length == 2 and cmd[0] == 'del':
-            ip = cmd[1]
-            if not self.__check_ip(ip):
-                print('Invalid IP. Try again.')
+            self.remove_link(cmd[1])
         else:
             print('Invalid command. Try again.')
-        return ip, weight
 
     def __handle_message(self):
         # TODO: handle all the message types we receive by UDP
         pass
 
-    def __check_ip(self, ip):
+    def __check_addr(self, ip):
         b = ip.split('.')
         if len(b) != 4:
             return False
@@ -104,3 +103,7 @@ class Router:
             except Exception as e:
                 return False
         return True
+
+    def __logexit(self, msg):
+        print(msg)
+        sys.exit(1)
