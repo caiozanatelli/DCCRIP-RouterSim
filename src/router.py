@@ -7,6 +7,7 @@ from collections import defaultdict
 
 DEFAULT_PORT   = 55151
 DEFAULT_PERIOD = 15
+MAX_UDP_SIZE = 65507
 
 class Router:
 
@@ -97,8 +98,46 @@ class Router:
             print('Invalid command. Try again.')
 
     def __handle_message(self):
-        # TODO: handle all the message types we receive by UDP
+        message, _ = self.__sock.recvfrom(MAX_UDP_SIZE)
+        message_dict = Packet.jsonDecoding(Packet.to_string(message))
+
+        if (message_dict["type"] == "data"):
+            data_message = Data(message_dict["source"], message_dict["destination"], message_dict["type"], message_dict["payload"])
+            self.__handle_data_message(data_message)
+
+        elif (message_dict["type"] == "update"):
+            update_message = Update(message_dict["source"], message_dict["destination"], message_dict["type"], message_dict["distances"])
+            self.__handle_update_message(update_message)
+
+        elif (message_dict["type"] == "trace"):
+            trace_message = Trace(message_dict["source"], message_dict["destination"], message_dict["type"], message_dict["hops"])
+            self.__handle_trace_message(trace_message)
+
+    def __handle_data_message(self, message):
+        print(message.__payload)
+        data = Packet.to_struct(Packet.jsonEncoding(message.to_dict()))
+        self.send_message(data)
+
+
+    def __handle_update_message(self, message):
+        # Implement Distance Vector Protocol
+        data = Packet.to_struct(Packet.jsonEncoding(message.to_dict()))
+        self.send_message(data)
         pass
+
+    def __handle_trace_message(self, message):
+
+        message.__hops.append(self.__addr)
+        if (message.__dest == self.__addr):
+            trace = Packet.jsonEncoding(message.to_dict())
+
+            trace_return = Data(self.__addr, message["source"], "data", trace)
+            data = Packet.to_struct(Packet.jsonEncoding(trace_return.to_dict()))
+            self.send_message(data)
+
+        else:
+            data = Packet.to_struct(Packet.jsonEncoding(message.to_dict()))
+            self.send_message(data)
 
     def __check_addr(self, ip):
         b = ip.split('.')
