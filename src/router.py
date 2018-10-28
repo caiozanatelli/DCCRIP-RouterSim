@@ -2,6 +2,7 @@ import selectors
 import socket
 import sys
 import re
+import random
 from threading import Lock, Timer
 from collections import defaultdict
 
@@ -75,8 +76,20 @@ class Router:
         del self.__links[addr]
         self.__links_lock.release()
 
-    def send_message(self, data):
-        pass
+    def send_message(self, message):
+        self.__routes_lock.acquire()
+        self.__links_lock.acquire()
+
+        routes = self.__get_routes(message.__dest)
+        if(routes == [])
+            # Send error message to origin
+            error_message = Data(self.__addr, message.__src, "data", "Error: Unknown route to "+ str(message.__dest))
+            data = Packet.to_struct(Packet.jsonEncoding(error_message.to_dict()))
+            send_message(data)
+
+        else:
+            data = Packet.to_struct(Packet.jsonEncoding(message.to_dict()))
+            self.__sock.sendto(data, (random.choice(routes)))
 
     def __send_update(self):
         pass
@@ -115,29 +128,37 @@ class Router:
 
     def __handle_data_message(self, message):
         print(message.__payload)
-        data = Packet.to_struct(Packet.jsonEncoding(message.to_dict()))
-        self.send_message(data)
+        self.send_message(message)
 
 
     def __handle_update_message(self, message):
         # Implement Distance Vector Protocol
-        data = Packet.to_struct(Packet.jsonEncoding(message.to_dict()))
-        self.send_message(data)
-        pass
+        self.send_message(message)
 
     def __handle_trace_message(self, message):
-
         message.__hops.append(self.__addr)
+
         if (message.__dest == self.__addr):
             trace = Packet.jsonEncoding(message.to_dict())
-
-            trace_return = Data(self.__addr, message["source"], "data", trace)
-            data = Packet.to_struct(Packet.jsonEncoding(trace_return.to_dict()))
-            self.send_message(data)
+            message = Data(self.__addr, message["source"], "data", trace)
+            self.send_message(message)
 
         else:
-            data = Packet.to_struct(Packet.jsonEncoding(message.to_dict()))
-            self.send_message(data)
+            self.send_message(message)
+
+    def __get_routes(self, dest):
+        if (dest in self.__routes):
+            m =min(a[1], key = lambda x: x[1])[1]
+            routes = list(filter(lambda x: x[1] == m, a[1]))
+
+        if (dest in self.__links):
+            if(self.__links[dest] < min):
+               routes = [dest]
+
+        return routes
+
+
+
 
     def __check_addr(self, ip):
         b = ip.split('.')
