@@ -9,6 +9,7 @@ from collections import defaultdict
 DEFAULT_PORT   = 55151
 DEFAULT_PERIOD = 15
 MAX_UDP_SIZE = 65507
+MAX_WEIGHT = sys.maxsize
 
 class Router:
 
@@ -130,7 +131,6 @@ class Router:
         print(message.__payload)
         self.send_message(message)
 
-
     def __handle_update_message(self, message):
         # Implement Distance Vector Protocol
         self.send_message(message)
@@ -147,18 +147,21 @@ class Router:
             self.send_message(message)
 
     def __get_routes(self, dest):
+        m = MAX_WEIGHT
+        routes = list()
+
         if (dest in self.__routes):
             m =min(a[1], key = lambda x: x[1])[1]
             routes = list(filter(lambda x: x[1] == m, a[1]))
 
         if (dest in self.__links):
-            if(self.__links[dest] < min):
+            if(self.__links[dest] < m):
                routes = [dest]
 
+            elif(self.__links[dest] == m):
+               routes.append(dest)
+
         return routes
-
-
-
 
     def __check_addr(self, ip):
         b = ip.split('.')
