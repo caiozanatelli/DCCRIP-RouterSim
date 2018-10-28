@@ -86,7 +86,7 @@ class Router:
         self.__routes_lock.release()
         self.__links_lock.release()
 
-        if(len(routes == 0))
+        if(len(routes == 0)):
             # Send error message to origin
             error_message = Data(self.__addr, message.__src, "data", "Error: Unknown route to "+ str(message.__dest))
             data = Packet.to_struct(Packet.jsonEncoding(error_message.to_dict()))
