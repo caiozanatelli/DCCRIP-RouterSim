@@ -82,7 +82,11 @@ class Router:
         self.__links_lock.acquire()
 
         routes = self.__get_routes(message.__dest)
-        if(routes == [])
+
+        self.__routes_lock.release()
+        self.__links_lock.release()
+
+        if(len(routes == 0))
             # Send error message to origin
             error_message = Data(self.__addr, message.__src, "data", "Error: Unknown route to "+ str(message.__dest))
             data = Packet.to_struct(Packet.jsonEncoding(error_message.to_dict()))
@@ -93,7 +97,24 @@ class Router:
             self.__sock.sendto(data, (random.choice(routes)))
 
     def __send_update(self):
-        pass
+        self.__routes_lock.acquire()
+        self.__links_lock.acquire()
+
+        for link in self.__links:
+            distances = {}
+            for route in self.__routes.keys():
+                if (route != link):
+                    # Removes all entries received from link
+                    routes = list(filter(lambda x: x[0] != link, self.__routes))
+                    if (len(routes) == 0):
+                        continue
+                    min_weight, routes = __get_min_route(routes)
+                    distances[self.__addr] = min_weight
+            message = Update(self.__addr, link, "update", distances)
+            send_message(message)
+
+        self.__routes_lock.release()
+        self.__links_lock.release()
 
     def __handle_command(self, cmd_input):
         # TODO: perform all the commands in this function
@@ -132,8 +153,24 @@ class Router:
         self.send_message(message)
 
     def __handle_update_message(self, message):
-        # Implement Distance Vector Protocol
-        self.send_message(message)
+        if (message.__dest == self.__addr):
+            self.__routes_lock.acquire()
+            self.__links_lock.acquire()
+
+
+            for dest in message.__distances.keys():
+                # Removes all old entries from src
+                routes = list(filter(lambda x : x[0] != dest, self.routes[dest]))
+                # Adds new entries received
+                routes.append((message.__src, message.__distances[dest]))
+
+                self.__routes[dest] = routes
+
+            self.__routes_lock.release()
+            self.__links_lock.release()
+
+        else:
+            self.send_message(message)
 
     def __handle_trace_message(self, message):
         message.__hops.append(self.__addr)
@@ -151,17 +188,22 @@ class Router:
         routes = list()
 
         if (dest in self.__routes):
-            m =min(a[1], key = lambda x: x[1])[1]
-            routes = list(filter(lambda x: x[1] == m, a[1]))
+            m, routes = self.__get_min_route(self.__routes[dest])
 
         if (dest in self.__links):
-            if(self.__links[dest] < m):
-               routes = [dest]
+            if (self.__links[dest] < m):
+                m = self.__links[dest]
+                routes = [dest]
 
-            elif(self.__links[dest] == m):
+            elif (self.__links[dest] == m):
                routes.append(dest)
 
         return routes
+
+    def __get_min_route(self, routes):
+        min_weight = min(a[1], key = lambda x: x[1])[1]
+        min_routes = list(filter(lambda x: x[1] == m, routes))
+        return min_weight, min_routes
 
     def __check_addr(self, ip):
         b = ip.split('.')
