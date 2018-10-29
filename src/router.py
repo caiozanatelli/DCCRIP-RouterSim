@@ -6,6 +6,7 @@ import random
 from threading import Lock, Timer
 from collections import defaultdict
 from message import *
+from packet import Packet
 
 DEFAULT_PORT   = 55151
 DEFAULT_PERIOD = 15
@@ -88,6 +89,7 @@ class Router:
         print(self.__routes)
 
     def send_message(self, message):
+        print ("Sending message")
         self.__routes_lock.acquire()
         self.__links_lock.acquire()
 
@@ -96,15 +98,17 @@ class Router:
         self.__routes_lock.release()
         self.__links_lock.release()
 
-        if(len(routes == 0)):
+        print (routes)
+
+
+        if(len(routes) == 0):
             # Send error message to origin
             error_message = Data(self.__addr, message.get_source(), "data", "Error: Unknown route to "+ str(message.get_destination()))
-            data = Packet.to_struct(Packet.jsonEncoding(error_message.to_dict()))
-            send_message(data)
+            send_message(error_message)
 
         else:
-            data = Packet.to_struct(Packet.jsonEncoding(message.to_dict()))
-            self.__sock.sendto(data, (random.choice(routes)))
+            data = Packet.to_struct(Packet.json_encoding(message.to_dict()))
+            self.__sock.sendto(data, (random.choice(routes), DEFAULT_PORT))
 
     def __send_update(self):
         print('Sending update...')
@@ -119,7 +123,7 @@ class Router:
         for link in self.__links:
             print('Iterating over links...')
             distances = {}
-            for dest in routes:
+            for dest in self.__routes:
                 print('Iterating over distances...')
                 if (dest != link):
                     # Removes all entries received from link
@@ -132,25 +136,36 @@ class Router:
                     distances[dest] = min_weight
                     print('Updating min distance...')
 
+            self.__routes_lock.release()
+            self.__links_lock.release()
+
             print('Building update message...')
             message = Update(self.__addr, link, "update", distances)
             print('Sending update message...')
             self.send_message(message)
             print('Done...')
 
+            self.__routes_lock.acquire()
+            self.__links_lock.acquire()
+
         self.__routes_lock.release()
         self.__links_lock.release()
 
+
+
+
         # Resetting the timer
-        #self.__timer.cancel()
-        #self.__timer = Timer(self.__period, self.__send_update)
-        #self.__timer.start()
+        self.__timer.cancel()
+        self.__timer = Timer(self.__period, self.__send_update)
+        self.__timer.start()
 
     def send_trace(self, addr):
+        print ("Sending trace to "+ addr)
         hops = []
         hops.append(self.__addr)
         message = Trace( self.__addr, addr, "trace", hops)
         self.send_message(message)
+        print ("Trace sent")
 
     def __handle_command(self, cmd_input):
         # TODO: perform all the commands in this function
@@ -172,11 +187,9 @@ class Router:
 
     def __handle_message(self):
         print('Handling message...')
-        print(self.__links)
-        print(self.__routes)
 
         message, _ = self.__sock.recvfrom(MAX_UDP_SIZE)
-        message_dict = Packet.jsonDecoding(Packet.to_string(message))
+        message_dict = Packet.json_decoding(Packet.to_string(message))
 
         if (message_dict["type"] == "data"):
             data_message = Data(message_dict["source"], message_dict["destination"], message_dict["type"], message_dict["payload"])
@@ -224,7 +237,7 @@ class Router:
         message.get_hops().append(self.__addr)
 
         if (message.get_destination() == self.__addr):
-            trace = Packet.jsonEncoding(message.to_dict())
+            trace = Packet.json_encoding(message.to_dict())
             message = Data(self.__addr, message["source"], "data", trace)
             self.send_message(message)
 
