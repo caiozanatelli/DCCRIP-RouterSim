@@ -146,6 +146,12 @@ class Router:
         #self.__timer = Timer(self.__period, self.__send_update)
         #self.__timer.start()
 
+    def send_trace(self, addr):
+        hops = []
+        hops.append(self.__addr)
+        message = Trace( self.__addr, addr, "trace", hops)
+        send_message(message)
+
     def __handle_command(self, cmd_input):
         # TODO: perform all the commands in this function
         cmd = cmd_input.split(' ')
@@ -160,8 +166,7 @@ class Router:
         elif length == 2 and cmd[0] == 'del':
             self.remove_link(cmd[1])
         elif length == 2 and cmd[0] == 'trace':
-            # Send trace
-            pass
+            self.send_trace(cmd[1])
         else:
             print('Invalid command. Try again.')
 
