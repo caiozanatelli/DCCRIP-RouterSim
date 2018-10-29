@@ -17,6 +17,15 @@ class Message:
         d["desination"] = self.__dest
         return d
 
+    def get_destination(self):
+        return self.__dest
+
+    def get_source(self):
+        return self.__src
+
+    def get_type(self):
+        return self.__type
+
 class Data(Message):
     __payload   = None
 
@@ -41,6 +50,9 @@ class Update(Message):
         d["distances"] = self.__distances
         return d
 
+    def get_distances(self):
+        return self.__distances
+
 class Trace(Message):
     __hops  = None
 
@@ -51,4 +63,7 @@ class Trace(Message):
         d = super().to_dict(self)
         d["hops"] = self.__hops
         return d
+
+    def get_hops(self):
+        return self.__hops
     

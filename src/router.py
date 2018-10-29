@@ -91,14 +91,14 @@ class Router:
         self.__routes_lock.acquire()
         self.__links_lock.acquire()
 
-        routes = self.__get_routes(message.__dest)
+        routes = self.__get_routes(message.get_destination())
 
         self.__routes_lock.release()
         self.__links_lock.release()
 
         if(len(routes == 0)):
             # Send error message to origin
-            error_message = Data(self.__addr, message.__src, "data", "Error: Unknown route to "+ str(message.__dest))
+            error_message = Data(self.__addr, message.get_source(), "data", "Error: Unknown route to "+ str(message.get_destination()))
             data = Packet.to_struct(Packet.jsonEncoding(error_message.to_dict()))
             send_message(data)
 
@@ -111,10 +111,16 @@ class Router:
 
         self.__routes_lock.acquire()
         self.__links_lock.acquire()
+        print('Locking variables...')
+
+        routes = self.__routes.keys() | self.__links.keys()
+        print(routes)
 
         for link in self.__links:
+            print('Iterating over links...')
             distances = {}
-            for dest in self.__routes.keys():
+            for dest in routes:
+                print('Iterating over distances...')
                 if (dest != link):
                     # Removes all entries received from link
                     routes = list(filter(lambda x: x[0] != link, self.__routes[dest]))
@@ -124,10 +130,13 @@ class Router:
 
                     min_weight, _ = self.__get_min_route(routes)
                     distances[dest] = min_weight
+                    print('Updating min distance...')
 
+            print('Building update message...')
             message = Update(self.__addr, link, "update", distances)
+            print('Sending update message...')
             self.send_message(message)
-            print(distances)
+            print('Done...')
 
         self.__routes_lock.release()
         self.__links_lock.release()
@@ -185,16 +194,16 @@ class Router:
 
             for dest in message.__distances.keys():
                 # Removes all old entries from src
-                routes = list(filter(lambda x : x[0] != message.__src, self.routes[dest]))
+                routes = list(filter(lambda x : x[0] != message.get_source(), self.routes[dest]))
                 # Adds new entries received
-                routes.append((message.__src, message.__distances[dest]))
+                routes.append((message.get_source(), message.get_distances[dest]))
 
                 self.__routes[dest] = routes
 
-            if (message.__src in self.__routes_timer):
-                self.__routes_timer[message.__src].cancel()
-            self.__routes_timer[message.__src] = Timer(4*self.__period, self.__remove_routes, [message.__src])
-            self.__routes_timer[message.__src].start()
+            if (message.get_source() in self.__routes_timer):
+                self.__routes_timer[message.get_source()].cancel()
+            self.__routes_timer[message.get_source()] = Timer(4*self.__period, self.__remove_routes, [message.get_source()])
+            self.__routes_timer[message.get_source()].start()
 
             self.__routes_lock.release()
             self.__links_lock.release()
@@ -204,9 +213,9 @@ class Router:
             self.send_message(message)
 
     def __handle_trace_message(self, message):
-        message.__hops.append(self.__addr)
+        message.get_hops().append(self.__addr)
 
-        if (message.__dest == self.__addr):
+        if (message.get_destination() == self.__addr):
             trace = Packet.jsonEncoding(message.to_dict())
             message = Data(self.__addr, message["source"], "data", trace)
             self.send_message(message)
