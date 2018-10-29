@@ -54,6 +54,7 @@ class Router:
                     print(self.__links)
                     print(self.__routes)
                 elif key.fileobj == self.__sock:
+                    print('Message received by socket')
                     self.__handle_message()
 
     def add_link(self, addr, weight):
@@ -89,6 +90,7 @@ class Router:
 
     def send_message(self, message):
         self.__routes_lock.acquire()
+        print('Sending message...')
         self.__links_lock.acquire()
 
         routes = self.__get_routes(message.get_destination())
@@ -104,6 +106,7 @@ class Router:
 
         else:
             data = Packet.to_struct(Packet.jsonEncoding(message.to_dict()))
+            print('Sending this message: ' + str(data))
             self.__sock.sendto(data, (random.choice(routes)))
 
     def __send_update(self):
@@ -147,10 +150,13 @@ class Router:
         #self.__timer.start()
 
     def send_trace(self, addr):
+        print('Sending trace...')
         hops = []
         hops.append(self.__addr)
         message = Trace( self.__addr, addr, "trace", hops)
+        print('About to send the message...')
         self.send_message(message)
+        print('It should be done by now...')
 
     def __handle_command(self, cmd_input):
         # TODO: perform all the commands in this function
