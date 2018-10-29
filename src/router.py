@@ -150,7 +150,7 @@ class Router:
         hops = []
         hops.append(self.__addr)
         message = Trace( self.__addr, addr, "trace", hops)
-        send_message(message)
+        self.send_message(message)
 
     def __handle_command(self, cmd_input):
         # TODO: perform all the commands in this function
