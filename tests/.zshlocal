@@ -1,0 +1,66 @@
+dir
+vim add-lo-addresses.sh
+mv add-lo-addresses.sh lo-addresses.sh
+dir
+cat lo-addresses.sh
+./lo-addresses.sh
+./lo-addresses.sh del
+sudo ./lo-addresses.sh del
+vim lo-addresses.sh
+sudo ./lo-addresses.sh del
+dir
+ip addr show dev lo
+vim lo-addresses.sh
+./lo-addresses.sh add
+sudo ./lo-addresses.sh add
+sudo ./lo-addresses.sh del
+sudo ./lo-addresses.sh add
+dir
+dir
+vim tmux-setup-star.sh
+dir
+mkdir hub-and-spoke
+cd hub-and-spoke
+dir
+cd hub-and-spoke
+vim README.md
+dir
+cd hub-and-spoke
+ls
+cd hub-and-spoke
+dir
+git add README.md lo-addresses.sh
+cd hub-and-spoke
+dir
+./lo-addresses.sh add
+dir
+sudo ./lo-addresses.sh add
+cd hub-and-spoke
+dir
+cp hub-and-spoke fish
+dir
+cp -a hub-and-spoke fish
+cd fish
+mv fish fish-ecmp
+dir
+cd fish-ecmp
+dir
+cd hub-and-spoke
+dir
+cp -a fish-ecmp fish-asymmetric
+cd fish-asymmetric
+dir
+dir fish-
+dir **
+dir
+sudo ./lo-addresses.sh del
+dir
+cd ../
+dir
+cd hub-and-spoke
+sudo ./lo-addresses.sh add
+cd hub-and-spoke
+dir
+cd ../
+dir
+cd ../

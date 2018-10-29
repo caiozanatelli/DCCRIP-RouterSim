@@ -5,6 +5,7 @@ import re
 import random
 from threading import Lock, Timer
 from collections import defaultdict
+from message import *
 
 DEFAULT_PORT   = 55151
 DEFAULT_PERIOD = 15
@@ -13,9 +14,9 @@ MAX_WEIGHT = sys.maxsize
 
 class Router:
 
-    def __init__(self, addr, period=None):
+    def __init__(self, addr, period, startcmd=None):
         self.__addr   = addr
-        self.__period = period if period is not None else DEFAULT_PERIOD
+        self.__period = period
         self.__port   = DEFAULT_PORT
         self.__sock   = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.__sock.bind((self.__addr, self.__port))
@@ -33,6 +34,14 @@ class Router:
         # Setting the timer for updating routes information
         self.__timer = Timer(self.__period, self.__send_update)
         self.__timer.start()
+        # Initialization with previous installed commands
+        if not startcmd is None:
+            self.__startup_command(startcmd)
+
+    def __startup_command(self, input_file):
+        with open(input_file) as fp:
+            for line in fp:
+                self.__handle_command(line)
 
     def run(self):
         while True:
@@ -42,7 +51,6 @@ class Router:
                 if key.fileobj == sys.stdin:
                     cmd = input()
                     callback_funct(cmd)
-
                     print(self.__links)
                     print(self.__routes)
                 elif key.fileobj == self.__sock:
@@ -59,6 +67,9 @@ class Router:
         self.__links_lock.acquire()
         self.__links[addr] = weight
         self.__links_lock.release()
+        print('Link added...')
+        print(self.__links)
+        print(self.__routes)
 
     def remove_link(self, addr):
         # Check whether we have a valid addr
@@ -72,6 +83,9 @@ class Router:
         self.__links_lock.acquire()
         del self.__links[addr]
         self.__links_lock.release()
+        print('Link removed...')
+        print(self.__links)
+        print(self.__routes)
 
     def send_message(self, message):
         self.__routes_lock.acquire()
@@ -93,6 +107,8 @@ class Router:
             self.__sock.sendto(data, (random.choice(routes)))
 
     def __send_update(self):
+        print('Sending update...')
+
         self.__routes_lock.acquire()
         self.__links_lock.acquire()
 
@@ -110,15 +126,16 @@ class Router:
                     distances[dest] = min_weight
 
             message = Update(self.__addr, link, "update", distances)
-            send_message(message)
+            self.send_message(message)
+            print(distances)
 
         self.__routes_lock.release()
         self.__links_lock.release()
 
         # Resetting the timer
-        self.__timer.cancel()
-        self.__timer = Timer(self.__period, self.__send_update)
-        self.__timer.start()
+        #self.__timer.cancel()
+        #self.__timer = Timer(self.__period, self.__send_update)
+        #self.__timer.start()
 
     def __handle_command(self, cmd_input):
         # TODO: perform all the commands in this function
@@ -137,6 +154,10 @@ class Router:
             print('Invalid command. Try again.')
 
     def __handle_message(self):
+        print('Handling message...')
+        print(self.__links)
+        print(self.__routes)
+
         message, _ = self.__sock.recvfrom(MAX_UDP_SIZE)
         message_dict = Packet.jsonDecoding(Packet.to_string(message))
 

@@ -1,0 +1,112 @@
+mv ../tmux-setup-star.sh .
+dir
+mv tmux-setup-star.sh tmux.sh
+dir
+vim hub.txt
+vim spoke.txt
+dir
+dir
+dir
+cd ../../
+dir
+cd ../
+dir
+vim tmux.sh
+dir
+tmux split-pane -h python3.5 ../../router.pyc --addr 127.0.1.10
+dir
+cat tmux.sh
+vim tmux.sh
+dir
+./tmux.sh
+vim tmux.sh
+./tmux.sh
+dir
+vim tmux.sh
+./tmux.sh
+cat tmux.sh
+export exe="python3.5 ../../router.pyc"
+tmux split-pane -v $exe --addr 127.0.1.10 --startup-commands hub.txt 
+tmux split-pane -v $exe --addr 127.0.1.10 --startup-commands hub.txt 
+tmux split-pane -v ../../router.py --addr 127.0.1.10 --startup-commands hub.txt 
+tmux split-pane -v
+../../router.py --addr 127.0.1.10 --startup-commands hub.txt
+../../router.py --addr 127.0.1.10 --startup-commands hub.txt
+dir
+tail -f log-127.0.1.10.txt
+../../router.py --addr 127.0.1.10 --startup-commands hub.txt
+dir
+vim tmux.sh
+dir
+vim tmux.sh
+vim tmux.sh
+./tmux.sh
+ dir
+rm log*txt
+dir
+cat tmux.sh
+dir
+vim tmux.sh
+./tmux.sh
+vim tmux.sh
+./tmux.sh
+dir
+tail -f log-127.0.1.10.txt
+tail -f log-127.0.1.1.txt
+./tmux.sh
+./tmux.sh
+tail -f log-127.0.1.10.txt
+tail -f log-127.0.1.1.txt
+tail -f log-127.0.1.5.txt
+dir
+../../router.py --addr 127.0.1.5 --startup-commands spoke.txt
+tail -f log-127.0.1.5.txt
+./tmux.sh
+dir
+./tmux.sh
+dir
+git add hub.txt spoke.txt tmux.sh
+git commit -m 'initial tests' 
+git push
+dir
+./tmux.sh
+dir
+rm log*txt
+dir
+vim tmux.sh
+dir
+dir
+cd ../
+dir
+./tmux.sh
+vim example-traces.txt
+dir
+dir
+rm log*txt
+dir
+cd ../
+cd ../
+dir
+dir
+./tmux.sh
+tmux
+dir
+./tmux.sh
+dir
+tail -f log-127.0.1.10.txt
+vim update.txt
+python3
+vim update.txt
+python3
+dir
+cat update.txt
+dir
+rm update.txt
+rm log*txt
+dir
+cd ../../
+dir
+cat example-traces.txt
+dir
+cat example-traces.txt
+dir

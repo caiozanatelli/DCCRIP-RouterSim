@@ -3,9 +3,6 @@ import argparse
 import sys
 from router import Router
 
-#Try for using in the interpreter
-import cmd
-
 def parse_args():
 	parser = argparse.ArgumentParser(description='A router simulator that implements a \
 			distance-vector routing protocol with network balance and routing measures')
@@ -17,5 +14,5 @@ def parse_args():
 
 if __name__ == "__main__":
 	args = parse_args()
-	router = Router(args.addr, args.update_period)
+	router = Router(args.addr, args.update_period, args.startup_command)
 	router.run()
