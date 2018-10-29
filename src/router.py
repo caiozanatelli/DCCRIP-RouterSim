@@ -21,6 +21,7 @@ class Router:
         self.__sock.bind((self.__addr, self.__port))
         self.__routes = defaultdict()
         self.__links  = dict()
+        self.__routes_timer = dict()
         # Setting the selector for input (stdin and udp)
         self.__selector = selectors.DefaultSelector()
         self.__selector.register(sys.stdin, selectors.EVENT_READ, self.__handle_command)
@@ -28,6 +29,7 @@ class Router:
         # Setting the locks to critical sessions
         self.__routes_lock = Lock()
         self.__links_lock  = Lock()
+        self.__routes_timer_lock  = Lock()
         # Setting the timer for updating routes information
         self.__timer = Timer(self.__period, self.__send_update)
         self.__timer.start()
@@ -162,7 +164,7 @@ class Router:
         if (message.__dest == self.__addr):
             self.__routes_lock.acquire()
             self.__links_lock.acquire()
-
+            self.__routes_timer_lock.acquire()
 
             for dest in message.__distances.keys():
                 # Removes all old entries from src
@@ -172,8 +174,14 @@ class Router:
 
                 self.__routes[dest] = routes
 
+            if (message.__src in self.__routes_timer):
+                self.__routes_timer[message.__src].cancel()
+            self.__routes_timer[message.__src] = Timer(4*self.__period, self.__remove_routes, [message.__src])
+            self.__routes_timer[message.__src].start()
+
             self.__routes_lock.release()
             self.__links_lock.release()
+            self.__routes_timer_lock.release()
 
         else:
             self.send_message(message)
@@ -228,6 +236,16 @@ class Router:
         self.__timer.cancel()
         self.__timer = timer
         self.__timer.start()
+
+    def __remove_routes(self, addr):
+        self.__routes_lock.acquire()
+
+        for dest in self.__routes.keys():
+            # Removes all old entries from addr
+            routes = list(filter(lambda x : x[0] != addr, self.routes[dest]))
+            self.__routes[dest] = routes
+
+        self.__routes_lock.release()
 
     def __logexit(self, msg):
         print(msg)
