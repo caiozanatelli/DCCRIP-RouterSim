@@ -38,6 +38,9 @@ class Data(Message):
         d["payload"] = self.__payload
         return d
 
+    def get_payload(self):
+        return self.__payload
+
 class Update(Message):
     __distances = None
 

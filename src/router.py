@@ -104,7 +104,7 @@ class Router:
         if(len(routes) == 0):
             # Send error message to origin
             error_message = Data(self.__addr, message.get_source(), "data", "Error: Unknown route to "+ str(message.get_destination()))
-            send_message(error_message)
+            self.send_message(error_message)
 
         else:
             data = Packet.to_struct(Packet.json_encoding(message.to_dict()))
@@ -204,7 +204,7 @@ class Router:
             self.__handle_trace_message(trace_message)
 
     def __handle_data_message(self, message):
-        print(message.__payload)
+        print(message.get_payload())
         self.send_message(message)
 
     def __handle_update_message(self, message):
@@ -238,8 +238,8 @@ class Router:
 
         if message.get_destination() == self.__addr:
             trace   = Packet.json_encoding(message.to_dict())
-            message = Data(self.__addr, message["source"], "data", trace)
-            self.send_message(message.to_dict())
+            message = Data(self.__addr, message.get_source(), "data", trace)
+            self.send_message(message)
 
         else:
             self.send_message(message)
