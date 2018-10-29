@@ -60,10 +60,10 @@ class Trace(Message):
         Message.__init__(self, src, dest, msg_type)
         self.__hops = hops
 
+    def to_dict(self):
         d = super().to_dict(self)
         d["hops"] = self.__hops
         return d
 
     def get_hops(self):
         return self.__hops
-    
