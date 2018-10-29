@@ -44,6 +44,7 @@ class Router:
                     print(self.__links)
                     print(self.__routes)
                 elif key.fileobj == self.__sock:
+                    self.__handle_message()
                     print('Message handler not implemented yet. Sorry.')
 
     def add_link(self, addr, weight):
@@ -102,19 +103,24 @@ class Router:
 
         for link in self.__links:
             distances = {}
-            for route in self.__routes.keys():
-                if (route != link):
+            for dest in self.__routes.keys():
+                if (dest != link):
                     # Removes all entries received from link
-                    routes = list(filter(lambda x: x[0] != link, self.__routes))
+                    routes = list(filter(lambda x: x[0] != link, self.__routes[dest]))
                     if (len(routes) == 0):
                         continue
-                    min_weight, routes = __get_min_route(routes)
-                    distances[self.__addr] = min_weight
+                    min_weight, _ = self.__get_min_route(routes)
+                    distances[dest] = min_weight
             message = Update(self.__addr, link, "update", distances)
             send_message(message)
 
         self.__routes_lock.release()
         self.__links_lock.release()
+
+        # Resetting the timer
+        self.__timer.cancel()
+        self.__timer = Timer(self.__period, self.__send_update)
+        self.__timer.start()
 
     def __handle_command(self, cmd_input):
         # TODO: perform all the commands in this function
