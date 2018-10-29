@@ -239,7 +239,7 @@ class Router:
         if message.get_destination() == self.__addr:
             trace   = Packet.json_encoding(message.to_dict())
             message = Data(self.__addr, message["source"], "data", trace)
-            self.send_message(message)
+            self.send_message(message.to_dict())
 
         else:
             self.send_message(message)
