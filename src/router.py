@@ -123,16 +123,16 @@ class Router:
         for link in self.__links:
             print('Iterating over links...')
             distances = {}
-            for dest in self.__routes:
+            for dest in routes:
                 print('Iterating over distances...')
                 if (dest != link):
                     # Removes all entries received from link
-                    routes = list(filter(lambda x: x[0] != link, self.__routes[dest]))
+                    gateways = list(filter(lambda x: x[0] != link, self.__routes[dest]))
 
-                    if (len(routes) == 0):
+                    if (len(gateways) == 0):
                         continue
 
-                    min_weight, _ = self.__get_min_route(routes)
+                    min_weight, _ = self.__get_min_route(gateways)
                     distances[dest] = min_weight
                     print('Updating min distance...')
 
@@ -208,12 +208,12 @@ class Router:
         self.send_message(message)
 
     def __handle_update_message(self, message):
-        if (message.__dest == self.__addr):
+        if (message.get_destination() == self.__addr):
             self.__routes_lock.acquire()
             self.__links_lock.acquire()
             self.__routes_timer_lock.acquire()
 
-            for dest in message.__distances.keys():
+            for dest in message.get_distances().keys():
                 # Removes all old entries from src
                 routes = list(filter(lambda x : x[0] != message.get_source(), self.routes[dest]))
                 # Adds new entries received
@@ -236,8 +236,8 @@ class Router:
     def __handle_trace_message(self, message):
         message.get_hops().append(self.__addr)
 
-        if (message.get_destination() == self.__addr):
-            trace = Packet.json_encoding(message.to_dict())
+        if message.get_destination() == self.__addr:
+            trace   = Packet.json_encoding(message.to_dict())
             message = Data(self.__addr, message["source"], "data", trace)
             self.send_message(message)
 
