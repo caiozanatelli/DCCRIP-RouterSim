@@ -159,6 +159,9 @@ class Router:
                 sys.exit(1)
         elif length == 2 and cmd[0] == 'del':
             self.remove_link(cmd[1])
+        elif length == 2 and cmd[0] == 'trace':
+            # Send trace
+            pass
         else:
             print('Invalid command. Try again.')
 
