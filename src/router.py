@@ -47,7 +47,6 @@ class Router:
                     print(self.__routes)
                 elif key.fileobj == self.__sock:
                     self.__handle_message()
-                    print('Message handler not implemented yet. Sorry.')
 
     def add_link(self, addr, weight):
         # Check whether we have a valid addr
@@ -67,13 +66,7 @@ class Router:
             self.__logexit('Error. Invalid IP.')
 
         # First we safely remove the addr from the routing table
-        self.__routes_lock.acquire()
-        for key, mask in self.__routes.items():
-            try:
-                del self.__routes[key][addr]
-            except:
-                pass
-        self.__routes_lock.release()
+        self.__remove_routes(addr)
 
         # Then we safely remove the addr from the link table
         self.__links_lock.acquire()
@@ -109,10 +102,13 @@ class Router:
                 if (dest != link):
                     # Removes all entries received from link
                     routes = list(filter(lambda x: x[0] != link, self.__routes[dest]))
+
                     if (len(routes) == 0):
                         continue
+
                     min_weight, _ = self.__get_min_route(routes)
                     distances[dest] = min_weight
+
             message = Update(self.__addr, link, "update", distances)
             send_message(message)
 
@@ -168,7 +164,7 @@ class Router:
 
             for dest in message.__distances.keys():
                 # Removes all old entries from src
-                routes = list(filter(lambda x : x[0] != dest, self.routes[dest]))
+                routes = list(filter(lambda x : x[0] != message.__src, self.routes[dest]))
                 # Adds new entries received
                 routes.append((message.__src, message.__distances[dest]))
 
