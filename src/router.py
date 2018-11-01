@@ -205,7 +205,8 @@ class Router:
 
     def __handle_data_message(self, message):
         print(message.get_payload())
-        self.send_message(message)
+        if (message.get_destination() != self.__addr):
+            self.send_message(message)
 
     def __handle_update_message(self, message):
         if (message.get_destination() == self.__addr):
