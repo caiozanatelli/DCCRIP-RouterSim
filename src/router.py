@@ -110,10 +110,14 @@ class Router:
 
         else:
             data = Packet.to_struct(Packet.json_encoding(message.to_dict()))
+            print(type(data))
             self.__sock.sendto(data, (random.choice(routes), DEFAULT_PORT))
 
     def __send_update(self):
         print('Sending update...')
+
+        print("Routing table")
+        print(self.__routes)
 
         self.__routes_lock.acquire()
         self.__links_lock.acquire()
@@ -149,6 +153,10 @@ class Router:
 
             print('Building update message...')
             message = Update(self.__addr, link, "update", distances)
+
+            print('To: '+ link)
+            print(distances)
+
             print('Sending update message...')
             self.send_message(message)
             print('Done...')
@@ -238,6 +246,11 @@ class Router:
                     self.__routes[dest]= []
                 self.__routes[dest].append((message.get_source(), message.get_distances()[dest] + link_weight))
 
+            print("From: " + message.get_source())
+            print(message.get_distances())
+            print("Routing table")
+            print(self.__routes)
+
             # Update routes timer
             self.__routes_timer_lock.acquire()
             if (message.get_source() in self.__routes_timer):
@@ -282,7 +295,7 @@ class Router:
 
     def __get_min_route(self, routes):
         min_weight = min(routes, key = lambda x: x[1])[1]
-        min_routes = list(filter(lambda x: x[1] == min_weight, routes))
+        min_routes = list(map(lambda x: x[0], filter(lambda x: x[1] == min_weight, routes)))
         return min_weight, min_routes
 
     def __check_addr(self, ip):
