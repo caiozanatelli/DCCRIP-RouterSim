@@ -212,24 +212,32 @@ class Router:
         if (message.get_destination() == self.__addr):
             self.__routes_lock.acquire()
             self.__links_lock.acquire()
-            self.__routes_timer_lock.acquire()
 
+            if (message.get_source() not in self.__links):
+                self.__routes_lock.release()
+                self.__links_lock.release()
+                return
+
+            # Remove old entries from source
+            self.__routes_lock.release()
+            self.__remove_routes(message.get_source())
+            self.__routes_lock.acquire()
+
+            # Insert new entries
+            link_weight = self.__links[message.get_source()]
             for dest in message.get_distances().keys():
-                # Removes all old entries from src
-                routes = list(filter(lambda x : x[0] != message.get_source(), self.routes[dest]))
-                # Adds new entries received
-                routes.append((message.get_source(), message.get_distances[dest]))
+                self.__routes[dest].append((message.get_source(), message.get_distances[dest] + link_weight))
 
-                self.__routes[dest] = routes
-
+            # Update routes timer
+            self.__routes_timer_lock.acquire()
             if (message.get_source() in self.__routes_timer):
                 self.__routes_timer[message.get_source()].cancel()
             self.__routes_timer[message.get_source()] = Timer(4*self.__period, self.__remove_routes, [message.get_source()])
             self.__routes_timer[message.get_source()].start()
+            self.__routes_timer_lock.release()
 
             self.__routes_lock.release()
             self.__links_lock.release()
-            self.__routes_timer_lock.release()
 
         else:
             self.send_message(message)
