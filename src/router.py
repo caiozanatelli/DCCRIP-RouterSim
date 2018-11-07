@@ -103,8 +103,10 @@ class Router:
 
         if(len(routes) == 0):
             # Send error message to origin
-            error_message = Data(self.__addr, message.get_source(), "data", "Error: Unknown route to "+ str(message.get_destination()))
-            self.send_message(error_message)
+            # error_message = Data(self.__addr, message.get_source(), "data", "Error: Unknown route to "+ str(message.get_destination()))
+            # self.send_message(error_message)
+            print("Unknown route to "+ str(message.get_destination()))
+            print(self.__routes)
 
         else:
             data = Packet.to_struct(Packet.json_encoding(message.to_dict()))
@@ -117,14 +119,18 @@ class Router:
         self.__links_lock.acquire()
         print('Locking variables...')
 
-        routes = self.__routes.keys() | self.__links.keys()
-        print(routes)
-
         for link in self.__links:
             print('Iterating over links...')
             distances = {}
-            for dest in routes:
-                print('Iterating over distances...')
+
+            # Get links weight
+            for dest in self.__links:
+                if (dest != link):
+                    distances[dest] = self.__links[dest]
+
+            # Get routes min weight
+            for dest in self.__routes:
+                print('Iterating over routes...')
                 if (dest != link):
                     # Removes all entries received from link
                     gateways = list(filter(lambda x: x[0] != link, self.__routes[dest]))
@@ -133,7 +139,9 @@ class Router:
                         continue
 
                     min_weight, _ = self.__get_min_route(gateways)
-                    distances[dest] = min_weight
+
+                    if (dest in distances and distances[dest] > min_weight):
+                        distances[dest] = min_weight
                     print('Updating min distance...')
 
             self.__routes_lock.release()
@@ -226,7 +234,9 @@ class Router:
             # Insert new entries
             link_weight = self.__links[message.get_source()]
             for dest in message.get_distances().keys():
-                self.__routes[dest].append((message.get_source(), message.get_distances[dest] + link_weight))
+                if (dest not in self.__routes):
+                    self.__routes[dest]= []
+                self.__routes[dest].append((message.get_source(), message.get_distances()[dest] + link_weight))
 
             # Update routes timer
             self.__routes_timer_lock.acquire()
@@ -271,8 +281,8 @@ class Router:
         return routes
 
     def __get_min_route(self, routes):
-        min_weight = min(a[1], key = lambda x: x[1])[1]
-        min_routes = list(filter(lambda x: x[1] == m, routes))
+        min_weight = min(routes, key = lambda x: x[1])[1]
+        min_routes = list(filter(lambda x: x[1] == min_weight, routes))
         return min_weight, min_routes
 
     def __check_addr(self, ip):
@@ -298,7 +308,7 @@ class Router:
 
         for dest in self.__routes.keys():
             # Removes all old entries from addr
-            routes = list(filter(lambda x : x[0] != addr, self.routes[dest]))
+            routes = list(filter(lambda x : x[0] != addr, self.__routes[dest]))
             self.__routes[dest] = routes
 
         self.__routes_lock.release()
