@@ -144,6 +144,8 @@ class Router:
 
                     min_weight, _ = self.__get_min_route(gateways)
 
+                    if (dest not in distances):
+                        distances[dest] = min_weight
                     if (dest in distances and distances[dest] > min_weight):
                         distances[dest] = min_weight
                     print('Updating min distance...')
