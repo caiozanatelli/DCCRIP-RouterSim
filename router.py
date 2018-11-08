@@ -1,3 +1,7 @@
+#!/usr/bin/python3
+import argparse
+import json
+import sys
 import selectors
 import socket
 import sys
@@ -5,22 +9,109 @@ import re
 import random
 from threading import Lock, Timer
 from collections import defaultdict
-from message import *
-from packet import Packet
 
 DEFAULT_PORT   = 55151
 DEFAULT_PERIOD = 15
 MAX_UDP_SIZE = 65507
 MAX_WEIGHT = sys.maxsize
 
+class Packet:
+
+    def json_encoding(json_dict):
+        json_str = json.dumps(json_dict)
+        return json_str
+
+    def json_decoding(json_str):
+        json_dict = json.loads(json_str)
+        return json_dict
+
+    def to_struct(json_str):
+        data = bytes(json_str, 'ascii')
+        return data
+
+    def to_string(data):
+        json_str = data.decode('ascii')
+        return json_str
+
+class Message:
+    __src  = None
+    __dest = None
+    __type = None
+
+    def __init__(self, src, dest, msg_type):
+        self.__src  = src
+        self.__dest = dest
+        self.__type = msg_type
+
+    def to_dict(self):
+        d = dict()
+        d["type"] = self.__type
+        d["source"] = self.__src
+        d["destination"] = self.__dest
+        return d
+
+    def get_destination(self):
+        return self.__dest
+
+    def get_source(self):
+        return self.__src
+
+    def get_type(self):
+        return self.__type
+
+class Data(Message):
+    __payload   = None
+
+    def __init__(self, src, dest, msg_type, payload):
+        Message.__init__(self, src, dest, msg_type)
+        self.__payload      = payload
+
+    def to_dict(self):
+        d = super().to_dict()
+        d["payload"] = self.__payload
+        return d
+
+    def get_payload(self):
+        return self.__payload
+
+class Update(Message):
+    __distances = None
+
+    def __init__(self, src, dest, msg_type, distances):
+        Message.__init__(self, src, dest, msg_type)
+        self.__distances = distances
+
+    def to_dict(self):
+        d = super().to_dict()
+        d["distances"] = self.__distances
+        return d
+
+    def get_distances(self):
+        return self.__distances
+
+class Trace(Message):
+    __hops  = None
+
+    def __init__(self, src, dest, msg_type, hops):
+        Message.__init__(self, src, dest, msg_type)
+        self.__hops = hops
+
+    def to_dict(self):
+        d = super().to_dict()
+        d["hops"] = self.__hops
+        return d
+
+    def get_hops(self):
+        return self.__hops
+
 class Router:
 
     def __init__(self, addr, period, startcmd=None):
         self.__addr   = addr
         if (period == None):
-            self.__period = DEFAULT_PERIOD
+        	self.__period = DEFAULT_PERIOD
         else:
-            self.__period = period
+        	self.__period = period
         self.__port   = DEFAULT_PORT
         self.__sock   = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.__sock.bind((self.__addr, self.__port))
@@ -336,3 +427,18 @@ class Router:
     def __logexit(self, msg):
         print(msg)
         sys.exit(1)
+
+def parse_args():
+	parser = argparse.ArgumentParser(description='A router simulator that implements a \
+			distance-vector routing protocol with network balance and routing measures')
+	parser.add_argument("--addr", help="Router address", type=str, required=True)
+	parser.add_argument("--update-period", help="Router update sending time", type=int)
+	parser.add_argument("--startup-command", help="Command input file")
+	args = parser.parse_args()
+	return args
+
+if __name__ == "__main__":
+	args = parse_args()
+	router = Router(args.addr, args.update_period, args.startup_command)
+	router.run()
+
