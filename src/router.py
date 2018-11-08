@@ -296,6 +296,8 @@ class Router:
         return routes
 
     def __get_min_route(self, routes):
+        if (len(routes) == 0):
+            return MAX_WEIGHT, routes
         min_weight = min(routes, key = lambda x: x[1])[1]
         min_routes = list(map(lambda x: x[0], filter(lambda x: x[1] == min_weight, routes)))
         return min_weight, min_routes
