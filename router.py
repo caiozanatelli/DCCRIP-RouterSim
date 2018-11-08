@@ -183,7 +183,6 @@ class Router:
         print(self.__routes)
 
     def send_message(self, message):
-        print ("Sending message")
         self.__routes_lock.acquire()
         self.__links_lock.acquire()
 
@@ -200,7 +199,6 @@ class Router:
             # error_message = Data(self.__addr, message.get_source(), "data", "Error: Unknown route to "+ str(message.get_destination()))
             # self.send_message(error_message)
             print("Unknown route to "+ str(message.get_destination()))
-            print(self.__routes)
 
         else:
             data = Packet.to_struct(Packet.json_encoding(message.to_dict()))
@@ -208,17 +206,11 @@ class Router:
             self.__sock.sendto(data, (random.choice(routes), DEFAULT_PORT))
 
     def __send_update(self):
-        print('Sending update...')
-
-        print("Routing table")
-        print(self.__routes)
 
         self.__routes_lock.acquire()
         self.__links_lock.acquire()
-        print('Locking variables...')
 
         for link in self.__links:
-            print('Iterating over links...')
             distances = {}
 
             # Get links weight
@@ -228,7 +220,6 @@ class Router:
 
             # Get routes min weight
             for dest in self.__routes:
-                print('Iterating over routes...')
                 if (dest != link):
                     # Removes all entries received from link
                     gateways = list(filter(lambda x: x[0] != link, self.__routes[dest]))
@@ -242,20 +233,12 @@ class Router:
                         distances[dest] = min_weight
                     if (dest in distances and distances[dest] > min_weight):
                         distances[dest] = min_weight
-                    print('Updating min distance...')
 
             self.__routes_lock.release()
             self.__links_lock.release()
 
-            print('Building update message...')
             message = Update(self.__addr, link, "update", distances)
-
-            print('To: '+ link)
-            print(distances)
-
-            print('Sending update message...')
             self.send_message(message)
-            print('Done...')
 
             self.__routes_lock.acquire()
             self.__links_lock.acquire()
@@ -272,12 +255,10 @@ class Router:
         self.__timer.start()
 
     def send_trace(self, addr):
-        print ("Sending trace to "+ addr)
         hops = []
         hops.append(self.__addr)
         message = Trace( self.__addr, addr, "trace", hops)
         self.send_message(message)
-        print ("Trace sent")
 
     def __handle_command(self, cmd_input):
         # TODO: perform all the commands in this function
@@ -298,8 +279,6 @@ class Router:
             print('Invalid command. Try again.')
 
     def __handle_message(self):
-        print('Handling message...')
-
         message, _ = self.__sock.recvfrom(MAX_UDP_SIZE)
         message_dict = Packet.json_decoding(Packet.to_string(message))
 
@@ -341,11 +320,6 @@ class Router:
                 if (dest not in self.__routes):
                     self.__routes[dest]= []
                 self.__routes[dest].append((message.get_source(), message.get_distances()[dest] + link_weight))
-
-            print("From: " + message.get_source())
-            print(message.get_distances())
-            print("Routing table")
-            print(self.__routes)
 
             # Update routes timer
             self.__routes_timer_lock.acquire()
