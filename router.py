@@ -146,8 +146,6 @@ class Router:
                 if key.fileobj == sys.stdin:
                     cmd = input()
                     callback_funct(cmd)
-                    print(self.__links)
-                    print(self.__routes)
                 elif key.fileobj == self.__sock:
                     self.__handle_message()
 
@@ -163,8 +161,6 @@ class Router:
         self.__links[addr] = weight
         self.__links_lock.release()
         print('Link added...')
-        print(self.__links)
-        print(self.__routes)
 
     def remove_link(self, addr):
         # Check whether we have a valid addr
@@ -191,8 +187,6 @@ class Router:
         self.__routes_lock.release()
         self.__links_lock.release()
 
-        print (routes)
-
 
         if(len(routes) == 0):
             # Send error message to origin
@@ -202,7 +196,6 @@ class Router:
 
         else:
             data = Packet.to_struct(Packet.json_encoding(message.to_dict()))
-            print(type(data))
             self.__sock.sendto(data, (random.choice(routes), DEFAULT_PORT))
 
     def __send_update(self):
